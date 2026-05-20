@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Coffee Disease Intelligence{% endblock %}
+
+{% block content %}
+<main class="layout">
+  <section class="hero">
+    <p class="eyebrow">Coffee Crop Intelligence</p>
+    <h1>Upload coffee leaves and berries for rapid disease screening.</h1>
+    <p class="lead">
+      Capture field photos, run an instant model-based diagnosis, and save each
+      analysis so you can track disease patterns over time.
+    </p>
+
+    <div class="workflow-card">
+      <h2>What the app does</h2>
+      <ol class="workflow-list">
+        <li>Uploading images of coffee leaves and berries for analysis.</li>
+        <li>Automatic detection and prediction of possible coffee diseases.</li>
+        <li>Displaying disease diagnosis results to the user.</li>
+        <li>Providing recommendations on disease control and treatment.</li>
+        <li>Storing agricultural data and prediction results.</li>
+      </ol>
+    </div>
+
+    <div class="feature-list">
+      <div class="feature-card">
+        <span>Sample Types</span>
+        <strong>Leaf &amp; Berry</strong>
+      </div>
+      <div class="feature-card">
+        <span>Diagnosis Engine</span>
+        <strong>Teachable Machine (Browser)</strong>
+      </div>
+      <div class="feature-card">
+        <span>Field History</span>
+        <strong>Saved Analyses</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="upload-form" method="post" enctype="multipart/form-data">
+      <label class="dropzone" for="image">
+        <span class="dropzone-title">Select a leaf or berry image</span>
+        <span class="dropzone-subtitle">Maximum size: 10 MB</span>
+        <input id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.webp" required>
+      </label>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="sample_type">Sample type</label>
+          <select id="sample_type" name="sample_type">
+            <option value="leaf" {% if sample_type == 'leaf' %}selected{% endif %}>Leaf</option>
+            <option value="berry" {% if sample_type == 'berry' %}selected{% endif %}>Berry</option>
+            <option value="other" {% if sample_type == 'other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="location">Location (optional)</label>
+          <input
+            id="location"
+            name="location"
+            type="text"
+            placeholder="Farm block, district, GPS"
+            value="{{ location }}"
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="notes">Observed symptoms (optional)</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="Yellowing edges, rust spots, etc.">{{ notes }}</textarea>
+      </div>
+
+      <button id="run-analysis" type="button">Run Diagnosis</button>
+      <p class="form-note">Runs in your browser using the Teachable Machine model.</p>
+      <p id="model-status" class="form-note muted-note"></p>
+    </form>
+
+    {% if error %}
+    <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <div id="client-error" class="alert hidden"></div>
+
+    <div id="results" class="results-grid hidden">
+      <div class="preview-card">
+        <h2>Uploaded Sample</h2>
+        <img id="image-preview" src="" alt="Uploaded image preview">
+        <p id="image-filename"></p>
+        <div class="meta">
+          <span id="chip-sample-type" class="chip"></span>
+          <span id="chip-location" class="chip hidden"></span>
+        </div>
+        <p id="notes-text" class="notes hidden"></p>
+      </div>
+
+      <div class="diagnosis-card">
+        <h2>Diagnosis Summary</h2>
+        <p id="diagnosis-placeholder" class="diagnosis-meta">
+          Run an analysis to see a diagnosis summary.
+        </p>
+        <p id="diagnosis-label" class="diagnosis-label hidden"></p>
+        <p id="diagnosis-meta" class="diagnosis-meta hidden"></p>
+        <h3 id="recommendations-title" class="hidden">Recommendations</h3>
+        <ul id="recommendations-list" class="recommendations hidden"></ul>
+      </div>
+
+      <div class="prediction-card">
+        <h2>Model Predictions</h2>
+        <ol id="predictions-list"></ol>
+        <p id="predictions-note" class="muted-note hidden">
+          Predictions are saved to the field history log.
+        </p>
+      </div>
+    </div>
+
+    {% if recent_predictions %}
+    <div class="history">
+      <h2>Recent Analyses</h2>
+      <ul class="history-list">
+        {% for record in recent_predictions %}
+        <li>
+          <div class="history-main">
+            <strong>{{ record.top_label }}</strong>
+            <span>{{ "%.1f"|format(record.top_confidence * 100) }}%</span>
+          </div>
+          <div class="history-meta">
+            <span>{{ record.created_at }}</span>
+            <span>{{ record.sample_type|title }}</span>
+            {% if record.location %}
+            <span>{{ record.location }}</span>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="button-link subtle" href="{{ url_for('main.history') }}">View full history</a>
+    </div>
+    {% endif %}
+  </section>
+</main>
+
+<div
+  id="tm-config"
+  class="hidden"
+  data-model-url="{{ tm_model_url }}"
+  data-metadata-url="{{ tm_metadata_url }}"
+  data-store-predictions="{{ 'true' if store_predictions else 'false' }}"
+  data-top-predictions="{{ top_predictions }}"
+></div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<script src="{{ url_for('static', filename='js/tm-infer.js') }}"></script>
+{% endblock %}
