@@ -22,13 +22,9 @@ body {
   min-height: 100vh;
   color: var(--ink);
   font-family: "Source Sans 3", sans-serif;
-  background-image:
-    linear-gradient(160deg, rgba(251, 247, 239, 0.92), rgba(237, 229, 217, 0.92)),
-    url("../img/developer.png");
-  background-size: cover, cover;
-  background-position: center center, center center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed;
+  background: linear-gradient(160deg, rgba(251, 247, 239, 0.35), rgba(237, 229, 217, 0.35)),
+    url("/static/img/developer.png") center/cover no-repeat fixed;
+  background-color: var(--bg);
 }
 
 .history-layout {
