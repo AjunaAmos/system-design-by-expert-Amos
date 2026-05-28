@@ -18,18 +18,26 @@
   const chipSample = document.getElementById("chip-sample-type");
   const chipLocation = document.getElementById("chip-location");
   const notesEl = document.getElementById("notes-text");
-  const diagLabel = document.getElementById("diagnosis-label");
-  const diagMeta = document.getElementById("diagnosis-meta");
+  const diagType = document.getElementById("diagnosis-type");
+  const diagConfidence = document.getElementById("diagnosis-confidence");
   const diagPlaceholder = document.getElementById("diagnosis-placeholder");
   const recTitle = document.getElementById("recommendations-title");
   const recList = document.getElementById("recommendations-list");
+  const openCameraButton = document.getElementById("open-camera");
+  const captureButton = document.getElementById("capture-camera");
+  const stopCameraButton = document.getElementById("stop-camera");
+  const cameraSection = document.getElementById("camera-section");
+  const cameraStreamEl = document.getElementById("camera-stream");
+  const cameraStatus = document.getElementById("camera-status");
+
+  let modelPromise = null;
+  let previewUrl = null;
+  let capturedImageFile = null;
+  let cameraStream = null;
 
   if (!form || !runButton || !fileInput) {
     return;
   }
-
-  let modelPromise = null;
-  let previewUrl = null;
 
   const setStatus = (message) => {
     if (statusEl) {
@@ -57,13 +65,13 @@
     if (diagPlaceholder) {
       diagPlaceholder.classList.remove("hidden");
     }
-    if (diagLabel) {
-      diagLabel.textContent = "";
-      diagLabel.classList.add("hidden");
+    if (diagType) {
+      diagType.textContent = "";
+      diagType.classList.add("hidden");
     }
-    if (diagMeta) {
-      diagMeta.textContent = "";
-      diagMeta.classList.add("hidden");
+    if (diagConfidence) {
+      diagConfidence.textContent = "";
+      diagConfidence.classList.add("hidden");
     }
     if (recTitle) {
       recTitle.classList.add("hidden");
@@ -144,6 +152,77 @@
       previewImg.addEventListener("error", onError);
     });
 
+  const showCameraSection = (show) => {
+    if (!cameraSection) return;
+    cameraSection.classList.toggle("hidden", !show);
+    if (cameraStatus) {
+      cameraStatus.textContent = show ? "Live camera ready. Tap capture when your plant is framed." : "";
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+    }
+    if (cameraStreamEl) {
+      cameraStreamEl.srcObject = null;
+    }
+    showCameraSection(false);
+  };
+
+  const openCamera = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showError("Camera access is not supported in this browser.");
+      return;
+    }
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      cameraStream = stream;
+      if (cameraStreamEl) {
+        cameraStreamEl.srcObject = stream;
+      }
+      showCameraSection(true);
+    } catch (error) {
+      showError("Unable to access the camera. Check permissions and try again.");
+    }
+  };
+
+  const captureCamera = async () => {
+    if (!cameraStreamEl || !cameraStream) {
+      showError("Start the camera before capturing an image.");
+      return;
+    }
+    const width = cameraStreamEl.videoWidth;
+    const height = cameraStreamEl.videoHeight;
+    if (!width || !height) {
+      showError("Camera image is not ready yet.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      showError("Unable to capture camera image.");
+      return;
+    }
+    ctx.drawImage(cameraStreamEl, 0, 0, width, height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    if (!blob) {
+      showError("Unable to capture camera image.");
+      return;
+    }
+    const file = new File([blob], "camera.jpg", { type: "image/jpeg" });
+    capturedImageFile = file;
+    updatePreview(file);
+    stopCamera();
+  };
+
   const renderPredictions = (predictions) => {
     predictionsList.innerHTML = "";
     const limited = predictions.slice(0, topPredictions);
@@ -190,13 +269,16 @@
     if (diagPlaceholder) {
       diagPlaceholder.classList.add("hidden");
     }
-    if (diagLabel) {
-      diagLabel.textContent = diagnosis.label;
-      diagLabel.classList.remove("hidden");
+    if (diagType) {
+      const labelText = diagnosis.label?.toLowerCase() === "healthy"
+        ? "Healthy — no disease detected"
+        : `Disease type: ${diagnosis.label}`;
+      diagType.textContent = labelText;
+      diagType.classList.remove("hidden");
     }
-    if (diagMeta) {
-      diagMeta.textContent = `Confidence ${(diagnosis.confidence * 100).toFixed(1)}%`;
-      diagMeta.classList.remove("hidden");
+    if (diagConfidence) {
+      diagConfidence.textContent = `Confidence ${(diagnosis.confidence * 100).toFixed(1)}%`;
+      diagConfidence.classList.remove("hidden");
     }
   };
 
@@ -235,9 +317,9 @@
     clearError();
     resetDiagnosis();
 
-    const file = fileInput.files?.[0];
+    const file = fileInput.files?.[0] || capturedImageFile;
     if (!file) {
-      showError("Choose an image before running prediction.");
+      showError("Choose an image or capture a photo before running prediction.");
       return;
     }
 
@@ -268,7 +350,7 @@
         const response = await sendForRecommendations({
           predictions,
           sample_type: sampleType,
-          filename: file.name,
+          filename: file.name || "camera.jpg",
           mime_type: file.type || "image/jpeg",
           location: locationValue,
           notes: notesValue,
@@ -290,4 +372,19 @@
     event.preventDefault();
   });
   runButton.addEventListener("click", runAnalysis);
+  if (openCameraButton) {
+    openCameraButton.addEventListener("click", openCamera);
+  }
+  if (captureButton) {
+    captureButton.addEventListener("click", captureCamera);
+  }
+  if (stopCameraButton) {
+    stopCameraButton.addEventListener("click", stopCamera);
+  }
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      capturedImageFile = null;
+      stopCamera();
+    });
+  }
 })();

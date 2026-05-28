@@ -44,8 +44,20 @@
       <label class="dropzone" for="image">
         <span class="dropzone-title">Select a leaf or berry image</span>
         <span class="dropzone-subtitle">Maximum size: 10 MB</span>
-        <input id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.webp" required>
+        <input id="image" name="image" type="file" accept=".png,.jpg,.jpeg,.webp" capture="environment" required>
       </label>
+
+      <div class="camera-controls">
+        <button id="open-camera" type="button" class="button-inline">Open Camera</button>
+        <div id="camera-section" class="camera-section hidden">
+          <video id="camera-stream" autoplay muted playsinline></video>
+          <div class="camera-actions">
+            <button id="capture-camera" type="button" class="button-inline">Capture Photo</button>
+            <button id="stop-camera" type="button" class="button-inline">Stop Camera</button>
+          </div>
+          <p id="camera-status" class="form-note">Use the camera to capture a live plant image.</p>
+        </div>
+      </div>
 
       <div class="field-row">
         <div class="field">
@@ -73,8 +85,10 @@
         <textarea id="notes" name="notes" rows="3" placeholder="Yellowing edges, rust spots, etc.">{{ notes }}</textarea>
       </div>
 
-      <button id="run-analysis" type="button">Run Diagnosis</button>
-      <p class="form-note">Runs in your browser using the Teachable Machine model.</p>
+      <div class="button-row">
+        <button id="run-analysis" type="button">Run Diagnosis</button>
+      </div>
+      <p class="form-note">Runs in your browser using the Teachable Machine model. You can upload an image or capture one with your device camera.</p>
       <p id="model-status" class="form-note muted-note"></p>
     </form>
 
@@ -101,8 +115,8 @@
         <p id="diagnosis-placeholder" class="diagnosis-meta">
           Run an analysis to see a diagnosis summary.
         </p>
-        <p id="diagnosis-label" class="diagnosis-label hidden"></p>
-        <p id="diagnosis-meta" class="diagnosis-meta hidden"></p>
+        <p id="diagnosis-type" class="diagnosis-label hidden"></p>
+        <p id="diagnosis-confidence" class="diagnosis-meta hidden"></p>
         <h3 id="recommendations-title" class="hidden">Recommendations</h3>
         <ul id="recommendations-list" class="recommendations hidden"></ul>
       </div>
@@ -136,7 +150,8 @@
         </li>
         {% endfor %}
       </ul>
-      <a class="button-link subtle" href="{{ url_for('main.history') }}">View full history</a>
+      <a class="button-link subtle" href="{{ url_for('main.history') }}">View full history research log</a>
+      <p class="form-note">Review daily monitoring and research notes from saved analyses.</p>
     </div>
     {% endif %}
   </section>
