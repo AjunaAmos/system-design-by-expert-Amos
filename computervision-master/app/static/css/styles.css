@@ -397,11 +397,29 @@ button:hover {
   line-height: 1.5;
 }
 
-.diagnosis-card {
-  padding: 1.1rem 1rem;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid var(--line);
+  .image-details {
+    margin-top: 0.8rem;
+  }
+
+  .image-recognition {
+    margin: 0;
+    padding: 0.75rem 0.95rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(24, 33, 38, 0.08);
+    color: var(--ink);
+    font-size: 0.95rem;
+  }
+
+  .contact-notice {
+    margin: 1rem 0 0;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
+    background: rgba(216, 99, 42, 0.14);
+    border: 1px solid rgba(216, 99, 42, 0.24);
+    color: #7a2d0a;
+    font-size: 0.95rem;
+  }
 }
 
 .diagnosis-label {

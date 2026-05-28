@@ -21,8 +21,13 @@
   const diagType = document.getElementById("diagnosis-type");
   const diagConfidence = document.getElementById("diagnosis-confidence");
   const diagPlaceholder = document.getElementById("diagnosis-placeholder");
+  const contactNotice = document.getElementById("diagnosis-contact");
   const recTitle = document.getElementById("recommendations-title");
   const recList = document.getElementById("recommendations-list");
+  const imageDetails = document.getElementById("image-details");
+  const imageRecognition = document.getElementById("image-recognition");
+  const contactEmail = "ajunaamos90@gmail.com";
+  const DISEASE_CONFIDENCE_THRESHOLD = 0.6;
   const openCameraButton = document.getElementById("open-camera");
   const captureButton = document.getElementById("capture-camera");
   const stopCameraButton = document.getElementById("stop-camera");
@@ -72,6 +77,17 @@
     if (diagConfidence) {
       diagConfidence.textContent = "";
       diagConfidence.classList.add("hidden");
+    }
+    if (contactNotice) {
+      contactNotice.textContent = "";
+      contactNotice.classList.add("hidden");
+    }
+    if (imageRecognition) {
+      imageRecognition.textContent = "";
+      imageRecognition.classList.add("hidden");
+    }
+    if (imageDetails) {
+      imageDetails.classList.add("hidden");
     }
     if (recTitle) {
       recTitle.classList.add("hidden");
@@ -279,6 +295,25 @@
     if (diagConfidence) {
       diagConfidence.textContent = `Confidence ${(diagnosis.confidence * 100).toFixed(1)}%`;
       diagConfidence.classList.remove("hidden");
+    }
+    if (imageDetails && imageRecognition) {
+      const labelValue = diagnosis.label || "Unknown";
+      const statusText = diagnosis.label?.toLowerCase() === "healthy"
+        ? "Healthy"
+        : "Possible disease detected";
+      imageRecognition.textContent = `${labelValue} · ${statusText} · Confidence ${(diagnosis.confidence * 100).toFixed(1)}%`;
+      imageRecognition.classList.remove("hidden");
+      imageDetails.classList.remove("hidden");
+    }
+    if (contactNotice) {
+      const confidence = Number(diagnosis.confidence || 0);
+      if (confidence < DISEASE_CONFIDENCE_THRESHOLD) {
+        contactNotice.textContent = `Recognition confidence is low. Contact ${contactEmail} for research information.`;
+        contactNotice.classList.remove("hidden");
+      } else {
+        contactNotice.textContent = "";
+        contactNotice.classList.add("hidden");
+      }
     }
   };
 
